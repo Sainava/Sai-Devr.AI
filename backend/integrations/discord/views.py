@@ -1,3 +1,4 @@
+import logging
 import discord
 
 from app.agents.devrel.onboarding.messages import (
@@ -6,6 +7,8 @@ from app.agents.devrel.onboarding.messages import (
     CAPABILITY_SECTIONS,
 )
 from app.services.auth.management import get_or_create_user_by_discord
+
+logger = logging.getLogger(__name__)
 
 
 def build_final_handoff_embed() -> discord.Embed:
@@ -29,9 +32,13 @@ async def send_final_handoff_dm(user: discord.abc.User):
     try:
         embed = build_final_handoff_embed()
         await user.send(embed=embed)
-    except Exception:
-        # Fail silently to avoid crashing flows if DMs are closed or similar
-        pass
+        logger.info(f"Successfully sent handoff DM to user {user.id}")
+    except discord.Forbidden:
+        logger.warning(f"Cannot send DM to user {user.id} - DMs are disabled or bot is blocked")
+    except discord.HTTPException as e:
+        logger.error(f"Discord API error sending DM to user {user.id}: {e.status} - {e.text}")
+    except Exception as e:
+        logger.error(f"Unexpected error sending DM to user {user.id}: {type(e).__name__} - {str(e)}")
 
 class OAuthView(discord.ui.View):
     """View with OAuth button."""
@@ -99,8 +106,12 @@ class OnboardingView(discord.ui.View):
             await send_final_handoff_dm(interaction.user)
             try:
                 await interaction.message.edit(view=self)
-            except Exception:
-                pass
+            except discord.NotFound:
+                logger.warning(f"Message not found when editing onboarding view for user {interaction.user.id}")
+            except discord.HTTPException as e:
+                logger.error(f"Failed to edit onboarding view: {e.status} - {e.text}")
+            except Exception as e:
+                logger.error(f"Unexpected error editing onboarding view: {type(e).__name__} - {str(e)}")
         else:
             await interaction.followup.send(
                 "I still don't see a linked GitHub account. Run `/verify_github` and try again in a moment.",
@@ -115,6 +126,9 @@ class OnboardingView(discord.ui.View):
             item.disabled = True
         try:
             await interaction.response.edit_message(view=self)
-        except Exception:
-            # If edit fails (e.g., message deleted), ignore
-            pass
+        except discord.NotFound:
+            logger.warning(f"Message not found when editing skip view for user {interaction.user.id}")
+        except discord.HTTPException as e:
+            logger.error(f"Failed to edit skip view: {e.status} - {e.text}")
+        except Exception as e:
+            logger.error(f"Unexpected error editing skip view: {type(e).__name__} - {str(e)}")
