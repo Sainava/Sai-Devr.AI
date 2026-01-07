@@ -34,11 +34,9 @@ async def send_final_handoff_dm(user: discord.abc.User):
         await user.send(embed=embed)
         logger.info(f"Successfully sent handoff DM to user {user.id}")
     except discord.Forbidden:
-        logger.warning(f"Cannot send DM to user {user.id} - DMs are disabled or bot is blocked")
-    except discord.HTTPException as e:
-        logger.error(f"Discord API error sending DM to user {user.id}: {e.status} - {e.text}")
-    except Exception as e:
-        logger.error(f"Unexpected error sending DM to user {user.id}: {type(e).__name__} - {str(e)}")
+        logger.debug(f"Cannot send DM to user {user.id} - DMs are disabled or bot is blocked")
+    except Exception:
+        logger.exception(f"Unexpected error sending DM to user {user.id}")
 
 class OAuthView(discord.ui.View):
     """View with OAuth button."""
@@ -107,11 +105,9 @@ class OnboardingView(discord.ui.View):
             try:
                 await interaction.message.edit(view=self)
             except discord.NotFound:
-                logger.warning(f"Message not found when editing onboarding view for user {interaction.user.id}")
-            except discord.HTTPException as e:
-                logger.error(f"Failed to edit onboarding view: {e.status} - {e.text}")
-            except Exception as e:
-                logger.error(f"Unexpected error editing onboarding view: {type(e).__name__} - {str(e)}")
+                logger.debug(f"Message not found when editing onboarding view for user {interaction.user.id}")
+            except Exception:
+                logger.exception(f"Unexpected error editing onboarding view")
         else:
             await interaction.followup.send(
                 "I still don't see a linked GitHub account. Run `/verify_github` and try again in a moment.",
@@ -127,8 +123,6 @@ class OnboardingView(discord.ui.View):
         try:
             await interaction.response.edit_message(view=self)
         except discord.NotFound:
-            logger.warning(f"Message not found when editing skip view for user {interaction.user.id}")
-        except discord.HTTPException as e:
-            logger.error(f"Failed to edit skip view: {e.status} - {e.text}")
-        except Exception as e:
-            logger.error(f"Unexpected error editing skip view: {type(e).__name__} - {str(e)}")
+            logger.debug(f"Message not found when editing skip view for user {interaction.user.id}")
+        except Exception:
+            logger.exception(f"Unexpected error editing skip view")
