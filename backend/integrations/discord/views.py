@@ -107,7 +107,7 @@ class OnboardingView(discord.ui.View):
             except discord.NotFound:
                 logger.debug(f"Message not found when editing onboarding view for user {interaction.user.id}")
             except Exception:
-                logger.exception(f"Unexpected error editing onboarding view")
+                logger.exception("Unexpected error editing onboarding view")
         else:
             await interaction.followup.send(
                 "I still don't see a linked GitHub account. Run `/verify_github` and try again in a moment.",
@@ -125,4 +125,4 @@ class OnboardingView(discord.ui.View):
         except discord.NotFound:
             logger.debug(f"Message not found when editing skip view for user {interaction.user.id}")
         except Exception:
-            logger.exception(f"Unexpected error editing skip view")
+            logger.exception("Unexpected error editing skip view")
